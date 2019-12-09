@@ -20,7 +20,7 @@
 """
 
 import wx
-from ax12 import *
+import ax12
 from driver import Driver
 from ToolPane import ToolPane
 
@@ -71,25 +71,25 @@ class shell(wx.TextCtrl):
             line = self.PositionToXY(self.GetLastPosition())[1]
             l = self.GetLineText(line)[3:].split(" ")
             try:
-                if l[0] == u"help":   # display help data
+                if l[0] == "help":   # display help data
                     if len(l) > 1:      # for a particular command
-                        if l[1] == u"li":
+                        if l[1] == "li":
                             self.write(help[3])
-                        elif l[1] == u"mv":
+                        elif l[1] == "mv":
                             self.write(help[4])
-                        elif l[1] == u"set":
+                        elif l[1] == "set":
                             self.write(help[5])
-                        elif l[1] == u"get":
+                        elif l[1] == "get":
                             self.write(help[6])
                     else:
                         for h in help:
                             self.write(h)
-                elif l[0] == u"clear":
+                elif l[0] == "clear":
                     self.Clear()
                     self.SetValue(">> ")
                     self.SetInsertionPoint(3)
                     return
-                elif l[0] == u"serial":
+                elif l[0] == "serial":
                     # open a serial port
                     if self.parent.parent.port is not None:
                         self.parent.parent.port.ser.close()
@@ -97,7 +97,7 @@ class shell(wx.TextCtrl):
                     self.port = self.parent.parent.openPort(str(l[1]))
                 elif self.parent.parent.port is None:
                     self.write("\rNo port open!")
-                elif l[0] == u"ls":      # list servos
+                elif l[0] == "ls":      # list servos
                     to = self.parent.parent.port.ser.timeout
                     self.parent.parent.port.ser.timeout = 0.25
                     # baud = 1000000
@@ -106,7 +106,7 @@ class shell(wx.TextCtrl):
                     k = 0                # how many id's have we printed...
                     self.write("\r")
                     for i in range(18):
-                        if self.parent.parent.port.getReg(i + 1, P_PRESENT_POSITION_L, 1) != -1:
+                        if self.parent.parent.port.getReg(i + 1, ax12.P_PRESENT_POSITION_L, 1) != -1:
                             if k > 8:    # limit the width of each printout
                                 k = 0
                                 self.write("\r")
@@ -115,7 +115,7 @@ class shell(wx.TextCtrl):
                             wx.SafeYield()
                     self.parent.parent.port.ser.timeout = to
                 elif l[0] == u"mv":      # rename a servo
-                    if self.parent.parent.port.setReg(int(l[1]), P_ID, [int(l[2])]) == 0:
+                    if self.parent.parent.port.setReg(int(l[1]), ax12.P_ID, [int(l[2])]) == 0:
                         self.write("\rOK")
                 # elif l[0] == u"baud":    # set bus baud rate
                 #    if self.parent.parent.port.setReg(253,P_BAUD_RATE, [self.convertBaud(int(l[1]))] )
@@ -129,10 +129,10 @@ class shell(wx.TextCtrl):
                 elif l[0] == u"get":
                     if l[1] == u"temp":
                         self.write(
-                            "\r" + str(self.parent.parent.port.getReg(int(l[2]), P_PRESENT_TEMPERATURE, 2)))
+                            "\r" + str(self.parent.parent.port.getReg(int(l[2]), ax12.P_PRESENT_TEMPERATURE, 2)))
                     elif l[1] == u"pos":
                         self.write(
-                            "\r" + str(self.parent.parent.port.getReg(int(l[2]), P_PRESENT_POSITION, 2)))
+                            "\r" + str(self.parent.parent.port.getReg(int(l[2]), ax12.P_PRESENT_POSITION, 2)))
             except:
                 self.write("\runrecognized command!")
             # new line!

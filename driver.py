@@ -19,11 +19,11 @@
   Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import serial
-import time
 import sys
+import ax12
+import time
+import serial
 from binascii import b2a_hex
-from ax12 import *
 
 
 class Driver:
@@ -46,23 +46,23 @@ class Driver:
         self.ser.flushInput()
         length = 2 + len(params)
         checksum = 255 - ((index + length + ins + sum(params)) % 256)
-        self.ser.write(chr(0xFF) + chr(0xFF) +
-                       chr(index) + chr(length) + chr(ins))
+        self.ser.write((chr(0xFF) + chr(0xFF) +
+                       chr(index) + chr(length) + chr(ins)).encode())
         for val in params:
-            self.ser.write(chr(val))
-        self.ser.write(chr(checksum))
+            self.ser.write(chr(val).encode())
+        self.ser.write(chr(checksum).encode())
         return self.getPacket(0)
 
     def setReg(self, index, regstart, values):
         """ Set the value of registers. Should be called as such:
         ax12.setReg(1,1,(0x01,0x05)) """
-        self.execute(index, AX_WRITE_DATA, [regstart] + values)
+        self.execute(index, ax12.AX_WRITE_DATA, [regstart] + values)
         return self.error
 
     def getPacket(self, mode, id=-1, leng=-1, error=-1, params=None):
         """ Read a return packet, iterative attempt """
         # need a positive byte
-        d = self.ser.read()
+        d = self.ser.read().decode('utf-8')
         if d == '':
             print("Fail Read")
             return None
@@ -120,7 +120,7 @@ class Driver:
     def getReg(self, index, regstart, rlength):
         """ Get the value of registers, should be called as such:
         ax12.getReg(1,1,1) """
-        vals = self.execute(index, AX_READ_DATA, [regstart, rlength])
+        vals = self.execute(index, ax12.AX_READ_DATA, [regstart, rlength])
         if vals is None:
             print("Read Failed: Servo ID = " + str(index))
             return -1
@@ -137,13 +137,13 @@ class Driver:
         for i in vals:
             length = length + len(i)
             valsum = valsum + sum(i)
-        checksum = 255 - ((254 + length + AX_SYNC_WRITE +
+        checksum = 255 - ((254 + length + ax12.AX_SYNC_WRITE +
                            regstart + len(vals[0]) - 1 + valsum) % 256)
         # packet: FF FF ID LENGTH INS(0x03) PARAM .. CHECKSUM
-        self.ser.write(chr(0xFF) + chr(0xFF) + chr(0xFE) + chr(length) +
-                       chr(AX_SYNC_WRITE) + chr(regstart) + chr(len(vals[0]) - 1))
+        self.ser.write((chr(0xFF) + chr(0xFF) + chr(0xFE) + chr(length) +
+                       chr(ax12.AX_SYNC_WRITE) + chr(regstart) + chr(len(vals[0]) - 1)).encode())
         for servo in vals:
             for value in servo:
-                self.ser.write(chr(value))
-        self.ser.write(chr(checksum))
+                self.ser.write(chr(value).encode())
+        self.ser.write(chr(checksum).encode())
         # no return info...

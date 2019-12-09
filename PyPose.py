@@ -26,6 +26,7 @@ import ax12
 import serial
 from driver import Driver
 from project import Project
+from serial.tools import list_ports
 
 
 VERSION = "PyPose/NUKE 0015"
@@ -112,7 +113,7 @@ class editor(wx.Frame):
         columnmenu.Append(self.ID_2COL, "2 columns")
         columnmenu.Append(self.ID_3COL, "3 columns")
         columnmenu.Append(self.ID_4COL, "4 columns")
-        configmenu.Append(self.ID_COL_MENU, "pose editor", columnmenu)
+        configmenu.AppendSubMenu(columnmenu, "pose editor")
         # live update
         self.live = configmenu.Append(
             self.ID_LIVE_UPDATE, "live pose update", kind=wx.ITEM_CHECK)
@@ -255,34 +256,14 @@ class editor(wx.Frame):
     # Port Manipulation
     def findPorts(self):
         """ return a list of serial ports """
-        self.ports = list()
-        # windows first
-        for i in range(20):
+        self.ports = []
+        for p in list_ports.comports():
             try:
-                s = serial.Serial("COM" + str(i))
+                s = serial.Serial(p.device)
                 s.close()
-                self.ports.append("COM" + str(i))
-            except:
+                self.ports.append(p.device)
+            except OSError:
                 pass
-        if len(self.ports) > 0:
-            return self.ports
-        # mac specific next:
-        try:
-            for port in os.listdir("/dev/"):
-                if port.startswith("tty.usbserial"):
-                    self.ports.append("/dev/" + port)
-        except:
-            pass
-        # linux/some-macs
-        for k in ["/dev/ttyUSB", "/dev/ttyACM", "/dev/ttyS"]:
-            for i in range(6):
-                try:
-                    s = serial.Serial(k + str(i))
-                    s.close()
-                    self.ports.append(k + str(i))
-                except:
-                    pass
-        return self.ports
 
     def doPort(self, e=None):
         """ open a serial port """
