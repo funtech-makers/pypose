@@ -96,7 +96,7 @@ class lizard3(dict):
         self.legs = int(opt)
 
         # VARS = coxaLen, femurLen, tibiaLen, xBody, yBody, midyBody, xCOG, yCOG
-        if dims != None:
+        if dims is not None:
             self.L_COXA = dims[0]
             self.L_FEMUR = dims[1]
             self.L_TIBIA = dims[2]
@@ -106,7 +106,7 @@ class lizard3(dict):
             # cogs? 
 
         # SERVOS = Coxa, Femur, Tibia (LF, RF, LM, RM, LR, RR)
-        if servos != None:
+        if servos is not None:
             self.servos["LF Coxa"] = servos[0]
             self.servos["RF Coxa"] = servos[1]
             self.servos["LF Femur"] = servos[2]
@@ -129,7 +129,7 @@ class lizard3(dict):
             self.servos["RR Tibia"] = servos[17]
 
         # set resolution of each servo
-        if resolutions != None:
+        if resolutions is not None:
             self.resolutions = resolutions
     
     def adjustPanel(self, panel):
@@ -205,7 +205,7 @@ class lizard3(dict):
         sol = [0,0,0]       # [coxa,femur,tibia]
 
         # right front leg
-        if self.gaitGen != None:
+        if self.gaitGen is not None:
             gait = self.gaitGen("RF_GAIT")    
         if self.debug:
             print "RIGHT_FRONT: ", [self["RIGHT_FRONT"][i] + gait[i] for i in range(3)]
@@ -237,7 +237,7 @@ class lizard3(dict):
             fail = fail + 1
         
         # right rear leg 
-        if self.gaitGen != None:
+        if self.gaitGen is not None:
             gait = self.gaitGen("RR_GAIT")    
         if self.debug:
             print "RIGHT_REAR: ", [self["RIGHT_REAR"][i] + gait[i] for i in range(3)]
@@ -269,7 +269,7 @@ class lizard3(dict):
             fail = fail + 1
         
         # left front leg
-        if self.gaitGen != None:
+        if self.gaitGen is not None:
             gait = self.gaitGen("LF_GAIT")    
         if self.debug:
             print "LEFT_FRONT: ", [self["LEFT_FRONT"][i] + gait[i] for i in range(3)]
@@ -301,7 +301,7 @@ class lizard3(dict):
             fail = fail + 1
 
         # left rear leg
-        if self.gaitGen != None:
+        if self.gaitGen is not None:
             gait = self.gaitGen("LR_GAIT")   
         if self.debug:
             print "LEFT_REAR: ", [self["LEFT_REAR"][i] + gait[i] for i in range(3)]
@@ -334,7 +334,7 @@ class lizard3(dict):
     
         if self.legs > 4:
             # right middle leg
-            if self.gaitGen != None:
+            if self.gaitGen is not None:
                 gait = self.gaitGen("RM_GAIT")    
             if self.debug:
                 print "RIGHT_MIDDLE: ", [self["RIGHT_MIDDLE"][i] + gait[i] for i in range(3)]
@@ -366,7 +366,7 @@ class lizard3(dict):
                 fail = fail + 1
 
             # left middle leg
-            if self.gaitGen != None:
+            if self.gaitGen is not None:
                 gait = self.gaitGen("LM_GAIT")    
             if self.debug:
                 print "LEFT_MIDDLE: ", [self["LEFT_MIDDLE"][i] + gait[i] for i in range(3)]

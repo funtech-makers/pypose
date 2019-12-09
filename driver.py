@@ -25,10 +25,12 @@ import sys
 from binascii import b2a_hex
 from ax12 import *
 
+
 class Driver:
     """ Class to open a serial port and control AX-12 servos
     through an arbotiX board or USBDynamixel. """
-    def __init__(self, port="/dev/ttyUSB0",baud=38400, interpolation=False, direct=False):
+
+    def __init__(self, port="/dev/ttyUSB0", baud=38400, interpolation=False, direct=False):
         """ This may throw errors up the line -- that's a good thing. """
         self.ser = serial.Serial()
         self.ser.baudrate = baud
@@ -43,8 +45,9 @@ class Driver:
         """ Send an instruction to a device. """
         self.ser.flushInput()
         length = 2 + len(params)
-        checksum = 255 - ((index + length + ins + sum(params))%256)
-        self.ser.write(chr(0xFF)+chr(0xFF)+chr(index)+chr(length)+chr(ins))
+        checksum = 255 - ((index + length + ins + sum(params)) % 256)
+        self.ser.write(chr(0xFF) + chr(0xFF) +
+                       chr(index) + chr(length) + chr(ins))
         for val in params:
             self.ser.write(chr(val))
         self.ser.write(chr(checksum))
@@ -56,7 +59,7 @@ class Driver:
         self.execute(index, AX_WRITE_DATA, [regstart] + values)
         return self.error
 
-    def getPacket(self, mode, id=-1, leng=-1, error=-1, params = None):
+    def getPacket(self, mode, id=-1, leng=-1, error=-1, params=None):
         """ Read a return packet, iterative attempt """
         # need a positive byte
         d = self.ser.read()
@@ -118,7 +121,7 @@ class Driver:
         """ Get the value of registers, should be called as such:
         ax12.getReg(1,1,1) """
         vals = self.execute(index, AX_READ_DATA, [regstart, rlength])
-        if vals == None:
+        if vals is None:
             print("Read Failed: Servo ID = " + str(index))
             return -1
         if rlength == 1:
@@ -134,12 +137,13 @@ class Driver:
         for i in vals:
             length = length + len(i)
             valsum = valsum + sum(i)
-        checksum = 255 - ((254 + length + AX_SYNC_WRITE + regstart + len(vals[0]) - 1 + valsum)%256)
+        checksum = 255 - ((254 + length + AX_SYNC_WRITE +
+                           regstart + len(vals[0]) - 1 + valsum) % 256)
         # packet: FF FF ID LENGTH INS(0x03) PARAM .. CHECKSUM
-        self.ser.write(chr(0xFF)+chr(0xFF)+chr(0xFE)+chr(length)+chr(AX_SYNC_WRITE)+chr(regstart)+chr(len(vals[0])-1))
+        self.ser.write(chr(0xFF) + chr(0xFF) + chr(0xFE) + chr(length) +
+                       chr(AX_SYNC_WRITE) + chr(regstart) + chr(len(vals[0]) - 1))
         for servo in vals:
             for value in servo:
                 self.ser.write(chr(value))
         self.ser.write(chr(checksum))
         # no return info...
-

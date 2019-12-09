@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" 
+"""
   PyPose: Bioloid pose system for arbotiX robocontroller
   Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
 
@@ -21,17 +21,17 @@
 
 import wx
 
+
 class ToolPane(wx.Panel):
     """ base class for a tool pane for PyPose. """
-    
+
     def __init__(self, parent, port=None):
-        wx.Panel.__init__(self,parent,style=wx.TAB_TRAVERSAL)
-        self.parent = parent      
-        self.port = port  
+        wx.Panel.__init__(self, parent, style=wx.TAB_TRAVERSAL)
+        self.parent = parent
+        self.port = port
 
     def save(self):
-        pass    
+        pass
 
     def portUpdated(self):
         pass
-
