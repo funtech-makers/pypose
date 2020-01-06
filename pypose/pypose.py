@@ -60,7 +60,6 @@ class Editor(wx.Frame):
 
         # key data for our program
         self.project = Project()  # holds data for our project
-        self.tools = dict()  # our tool instances
         self.panelIndex = dict()  # existant tools
         self.saveReq = False
         self.panel = None
@@ -258,7 +257,7 @@ class Editor(wx.Frame):
             self.openPort(self.ports[dlg.GetSelection()])
             dlg.Destroy()
 
-    def openPort(self, port, baud=1000000, interpolate=True):
+    def openPort(self, port, baud=115200, interpolate=True):
         try:
             # TODO: add ability to select type of driver
             self.port = Driver(port, baud, interpolate)
@@ -341,21 +340,21 @@ class Editor(wx.Frame):
 
     def do2Col(self, e=None):
         self.columns = 2
-        if self.tool == "PoseEditor":
+        if self.panelIndex == 0:
             self.loadTool()
 
     def do3Col(self, e=None):
         self.columns = 3
-        if self.tool == "PoseEditor":
+        if isinstance(self.panel, panels[0]):
             self.loadTool()
 
     def do4Col(self, e=None):
         self.columns = 4
-        if self.tool == "PoseEditor":
+        if isinstance(self.panel, panels[0]):
             self.loadTool()
 
     def setLiveUpdate(self, e=None):
-        if self.tool == "PoseEditor":
+        if isinstance(self.panel, panels[0]):
             self.panel.live = self.live.IsChecked()
 
 

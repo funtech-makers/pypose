@@ -27,7 +27,7 @@ class Driver:
     """ Class to open a serial port and control AX-12 servos
     through an arbotiX board or USBDynamixel. """
 
-    def __init__(self, port="/dev/ttyUSB0", baud=1000000, interpolation=False, direct=False):
+    def __init__(self, port="/dev/ttyUSB0", baud=115200, interpolation=False, direct=False):
         """ This may throw errors up the line -- that's a good thing. """
         self.ser = serial.Serial()
         self.ser.baudrate = baud
@@ -41,14 +41,14 @@ class Driver:
     def execute(self, index, ins, params):
         """ Send an instruction to a device. """
         self.ser.flushInput()
-        packet = ""
+        packet = b""
         length = 2 + len(params)
         checksum = 255 - ((index + length + ins + sum(params)) % 256)
-        packet += chr(0xFF) + chr(0xFF) + chr(index) + chr(length) + chr(ins)
+        packet += bytes([0xFF, 0xFF, index, length, ins])
         for val in params:
-            packet += chr(val)
-        packet += chr(checksum)
-        self.ser.write(packet.encode())
+            packet += bytes([val])
+        packet += bytes([checksum])
+        self.ser.write(packet)
         return self.getPacket(0)
 
     def setReg(self, index, regstart, values):
@@ -60,53 +60,54 @@ class Driver:
     def getPacket(self, mode, id=-1, leng=-1, error=-1, params=None):
         """ Read a return packet, iterative attempt """
         # need a positive byte
-        d = self.ser.read().decode('utf-8', 'backslashreplace')
-        if d == '':
+        b = self.ser.read()
+        if b == b'':
             print("Fail Read")
             return None
 
+        d = b[0]
         # now process our byte
         if mode == 0:           # get our first 0xFF
-            if ord(d) == 0xff:
+            if d == 0xff:
                 print("Oxff found")
                 return self.getPacket(1)
             else:
-                print("Oxff NOT found, restart: " + str(ord(d)))
+                print("Oxff NOT found, restart: " + str(d))
                 return self.getPacket(0)
         elif mode == 1:         # get our second 0xFF
-            if ord(d) == 0xff:
+            if d == 0xff:
                 print("Oxff found")
                 return self.getPacket(2)
             else:
-                print("Oxff NOT found, restart: " + str(ord(d)))
+                print("Oxff NOT found, restart: " + str(d))
                 return self.getPacket(0)
         elif mode == 2:         # get id
             if d != 0xff:
-                print("ID found: " + str(ord(d)))
-                return self.getPacket(3, ord(d))
+                print("ID found: " + str(d))
+                return self.getPacket(3, d)
             else:
                 print("0xff is not ID, restart")
                 return self.getPacket(0)
         elif mode == 3:         # get length
-            print("Length found: " + str(ord(d)))
-            return self.getPacket(4, id, ord(d))
+            print("Length found: " + str(d))
+            return self.getPacket(4, id, d)
         elif mode == 4:         # read error
-            print("Error level found: " + str(ord(d)))
-            self.error = ord(d)
+            print("Error level found: " + str(d))
+            self.error = d
             if leng == 2:
-                return self.getPacket(6, id, leng, ord(d), list())
+                return self.getPacket(6, id, leng, d, list())
             else:
-                return self.getPacket(5, id, leng, ord(d), list())
+                return self.getPacket(5, id, leng, d, list())
         elif mode == 5:         # read params
-            print("Parameter found: " + str(ord(d)))
-            params.append(ord(d))
+            print("Parameter found: " + str(d))
+            params.append(d)
             if len(params) + 2 == leng:
                 return self.getPacket(6, id, leng, error, params)
             else:
                 return self.getPacket(5, id, leng, error, params)
         elif mode == 6:         # read checksum
-            print("Checksum found: " + str(ord(d)))
-            checksum = id + leng + error + sum(params) + ord(d)
+            print("Checksum found: " + str(d))
+            checksum = id + leng + error + sum(params) + d
             print("Checksum computed: " + str(checksum))
             if checksum % 256 != 255:
                 print("Checksum ERROR")

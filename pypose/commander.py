@@ -146,7 +146,7 @@ class Commander(wx.Frame):
 if __name__ == "__main__":
     # commander.py <serialport>
     ser = serial.Serial()
-    ser.baudrate = 38400
+    ser.baudrate = 115200
     ser.port = sys.argv[1]
     ser.timeout = 0.5
     ser.open()

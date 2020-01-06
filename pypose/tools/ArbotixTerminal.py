@@ -131,7 +131,7 @@ class shell(wx.TextCtrl):
                         self.write("\r" + str(self.parent.parent.port.getReg(int(l[2]), ax12.P_PRESENT_TEMPERATURE, 2)))
                     elif l[1] == "pos":
                         self.write("\r" + str(self.parent.parent.port.getReg(int(l[2]), ax12.P_PRESENT_POSITION, 2)))
-            except BaseException:
+            except ZeroDivisionError:
                 self.write("\rERROR : Unrecognized command!")
             # new line!
             self.write("\r>> ")
