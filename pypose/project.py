@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
   PyPose: for all things related to PyPose projects
@@ -19,13 +19,9 @@
   Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-###############################################################################
-# Pose class is a list, first element is name, rest are servo positions.
-
 
 class Pose(list):
-    """ A class to hold a pose. """
-
+    """Class to hold a pose."""
     def __init__(self, line, length):
         # now load the name, positions for this pose
         try:
@@ -36,7 +32,7 @@ class Pose(list):
                     self.append(int(line[0:]))
                 line = line[line.index(",") + 1:]
         # we may not have enough data, so dump it
-        except:
+        except BaseException:
             for i in range(length - len(self)):
                 self.append(512)
 
@@ -44,11 +40,12 @@ class Pose(list):
         return ", ".join([str(p) for p in self])
 
 
-###############################################################################
-# Sequence class is a list, first element is name, rest are (pose,time) pairs
 class Sequence(list):
-    """ A class to hold a sequence. """
+    """
+    Class to hold a sequence.
 
+    First element is name, rest are (pose,time) pairs
+    """
     def __init__(self, line=None):
         # load the name, (pose,time) pairs for this sequence
         try:
@@ -60,16 +57,15 @@ class Sequence(list):
                 elif line != "":
                     self.append(line.strip().rstrip())
                 line = line[line.index(",") + 1:]
-        except:
+        except BaseException:
             pass
 
     def __str__(self):
         return ", ".join([str(t) for t in self])
 
 
-###############################################################################
-# Class for dealing with project files
 class Project:
+    """Class for dealing with project files."""
     def __init__(self):
         self.name = ""
         self.count = 18
@@ -126,8 +122,6 @@ class Project:
         self.resolution = [nResolution for i in range(self.count)]
         self.save = True
 
-    ###########################################################################
-    # Export functionality
     def export(self, filename):
         """ Export a pose file for use with Sanguino Library. """
         poses = ""

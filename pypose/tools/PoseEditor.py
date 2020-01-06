@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
   PyPose: Bioloid pose system for ArbotiX robocontroller
@@ -20,16 +20,13 @@
 """
 
 import wx
-import ax12
-import project
-from ToolPane import ToolPane
-
-###############################################################################
-# pose editor window
+from pypose import ax12
+from pypose import project
+from .ToolPane import ToolPane
 
 
 class PoseEditor(ToolPane):
-    """ editor for the capture and creation of poses. """
+    """Editor for the capture and creation of poses. """
     BT_DELTA_T = wx.NewIdRef()
     BT_RELAX = wx.NewIdRef()
     BT_RELAX_ID = wx.NewIdRef()
@@ -40,6 +37,9 @@ class PoseEditor(ToolPane):
     BT_POSE_REM = wx.NewIdRef()
     BT_POSE_RENAME = wx.NewIdRef()
     ID_POSE_BOX = wx.NewIdRef()
+
+    NAME = "Pose editor"
+    STATUS = "Please create or select a sequence to edit..."
 
     def __init__(self, parent, port=None):
         ToolPane.__init__(self, parent, port)
@@ -132,10 +132,8 @@ class PoseEditor(ToolPane):
 
         self.SetSizerAndFit(sizer)
 
-    ###########################################################################
-    # Pose Manipulation
     def updatePose(self, e=None):
-        """ Save updates to a pose, do live update if neeeded. """
+        """Save updates to a pose, do live update if neeeded."""
         if self.curpose != "":
             self.parent.project.poses[self.curpose][e.GetId()] = e.GetInt()
             self.parent.project.save = True
@@ -336,7 +334,3 @@ class PoseEditor(ToolPane):
             self.deltaTButton.Enable()
         else:
             self.deltaTButton.Disable()
-
-
-NAME = "pose editor"
-STATUS = "please create or select a sequence to edit..."

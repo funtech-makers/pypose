@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
   PyPose: Bioloid pose system for arbotiX robocontroller
@@ -23,13 +23,13 @@
 import wx
 import sys
 import os
-import ax12
-import project
-from ToolPane import ToolPane
-from commander import Commander
+from pypose import ax12
+from pypose import project
+from pypose.tools.ToolPane import ToolPane
+from pypose.tools.commander import Commander
 
 # Which IK models to load?
-from models.manifest import iKmodels
+from pypose.tools.models.manifest import iKmodels
 
 ###############################################################################
 # nuke editor window
@@ -131,9 +131,9 @@ class NukeEditor(ToolPane):
         self.Bind(wx.EVT_BUTTON, self.doWalkTest, self.BT_DRIVE)
         self.Bind(wx.EVT_BUTTON, self.doExport, self.BT_EXPORT)
 
-        wx.EVT_COMBOBOX(self, self.ID_IKTYPE, self.doIKType)
-        wx.EVT_COMBOBOX(self, self.ID_IKOPT, self.doIkOpt)
-        wx.EVT_SPINCTRL(self, self.ID_ANY, self.save)
+        self.Bind(wx.EVT_COMBOBOX, self.doIKType, self.ID_IKTYPE)
+        self.Bind(wx.EVT_COMBOBOX, self.doIkOpt, self.ID_IKOPT)
+        self.Bind(wx.EVT_SPINCTRL, self.save, self.ID_ANY)
 
     ###########################################################################
     # draw buttons, etc.
@@ -386,9 +386,9 @@ class NukeEditor(ToolPane):
             print("Relax servos for capture...")
             self.parent.doRelax()
             print("Capturing limits...")
-            self.parent.project.poses["ik_min"] = project.pose(
+            self.parent.project.poses["ik_min"] = project.Pose(
                 "", self.parent.project.count)
-            self.parent.project.poses["ik_max"] = project.pose(
+            self.parent.project.poses["ik_max"] = project.Pose(
                 "", self.parent.project.count)
             self.parent.project.save = True
             self.captureLimits(1)
@@ -465,7 +465,7 @@ class NukeEditor(ToolPane):
                                 "tools/models/" + modelClassName + "/neutral.jpg")
             # dlg = wx.MessageDialog(self.parent, 'Click OK when ready!', 'Capture Neutral Position', wx.OK | wx.CANCEL)
             if dlg.ShowModal() == wx.ID_OK:
-                self.parent.project.poses["ik_neutral"] = project.pose(
+                self.parent.project.poses["ik_neutral"] = project.Pose(
                     "", self.parent.project.count)
                 errors = "could not read servos: "
                 for servo in range(self.parent.project.count):

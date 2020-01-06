@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
   PyPose: Serial driver for connection to arbotiX board or USBDynamixel.
@@ -19,18 +19,15 @@
   Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import sys
-import ax12
-import time
 import serial
-from binascii import b2a_hex
+from pypose import ax12
 
 
 class Driver:
     """ Class to open a serial port and control AX-12 servos
     through an arbotiX board or USBDynamixel. """
 
-    def __init__(self, port="/dev/ttyUSB0", baud=38400, interpolation=False, direct=False):
+    def __init__(self, port="/dev/ttyUSB0", baud=1000000, interpolation=False, direct=False):
         """ This may throw errors up the line -- that's a good thing. """
         self.ser = serial.Serial()
         self.ser.baudrate = baud
@@ -44,13 +41,14 @@ class Driver:
     def execute(self, index, ins, params):
         """ Send an instruction to a device. """
         self.ser.flushInput()
+        packet = ""
         length = 2 + len(params)
         checksum = 255 - ((index + length + ins + sum(params)) % 256)
-        self.ser.write((chr(0xFF) + chr(0xFF) +
-                       chr(index) + chr(length) + chr(ins)).encode())
+        packet += chr(0xFF) + chr(0xFF) + chr(index) + chr(length) + chr(ins)
         for val in params:
-            self.ser.write(chr(val).encode())
-        self.ser.write(chr(checksum).encode())
+            packet += chr(val)
+        packet += chr(checksum)
+        self.ser.write(packet.encode())
         return self.getPacket(0)
 
     def setReg(self, index, regstart, values):
@@ -62,7 +60,7 @@ class Driver:
     def getPacket(self, mode, id=-1, leng=-1, error=-1, params=None):
         """ Read a return packet, iterative attempt """
         # need a positive byte
-        d = self.ser.read().decode('utf-8')
+        d = self.ser.read().decode('utf-8', 'backslashreplace')
         if d == '':
             print("Fail Read")
             return None
@@ -134,16 +132,17 @@ class Driver:
         self.ser.flushInput()
         length = 4
         valsum = 0
+        packet = ""
         for i in vals:
             length = length + len(i)
             valsum = valsum + sum(i)
         checksum = 255 - ((254 + length + ax12.AX_SYNC_WRITE +
                            regstart + len(vals[0]) - 1 + valsum) % 256)
         # packet: FF FF ID LENGTH INS(0x03) PARAM .. CHECKSUM
-        self.ser.write((chr(0xFF) + chr(0xFF) + chr(0xFE) + chr(length) +
-                       chr(ax12.AX_SYNC_WRITE) + chr(regstart) + chr(len(vals[0]) - 1)).encode())
+        packet += chr(0xFF) + chr(0xFF) + chr(0xFE) + chr(length) + chr(ax12.AX_SYNC_WRITE) + chr(regstart) + chr(len(vals[0]) - 1)
         for servo in vals:
             for value in servo:
-                self.ser.write(chr(value).encode())
-        self.ser.write(chr(checksum).encode())
+                packet += chr(value)
+        packet += chr(checksum)
+        self.ser.write(packet.encode())
         # no return info...

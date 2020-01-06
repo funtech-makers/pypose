@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
   PyPose: Bioloid pose system for arbotiX robocontroller
@@ -19,24 +19,23 @@
   Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import os
 import wx
 import sys
-import ax12
 import serial
-from driver import Driver
-from project import Project
+import wx.adv
 from serial.tools import list_ports
 
+from pypose import ax12
+from pypose.tools import panels
+from pypose.driver import Driver
+from pypose.project import Project
 
-VERSION = "PyPose/NUKE 0015"
 
-###############################################################################
-# Main editor window
+VERSION = "PyPose v2 / NUKE 0015"
 
 
-class editor(wx.Frame):
-    """ Implements the main window. """
+class Editor(wx.Frame):
+    """Implements the main editor window. """
     ID_NEW = wx.NewIdRef()
     ID_OPEN = wx.NewIdRef()
     ID_SAVE = wx.NewIdRef()
@@ -62,7 +61,7 @@ class editor(wx.Frame):
         # key data for our program
         self.project = Project()  # holds data for our project
         self.tools = dict()  # our tool instances
-        self.toolIndex = dict()  # existant tools
+        self.panelIndex = dict()  # existant tools
         self.saveReq = False
         self.panel = None
         self.port = None
@@ -89,34 +88,27 @@ class editor(wx.Frame):
         prjmenu.Append(self.ID_EXIT, "&Quit\tCtrl+Q", "", wx.ITEM_NORMAL)
         menubar.Append(prjmenu, "Project")
 
+        # Create tool panel
         toolsmenu = wx.Menu()
-        # find our tools
-        toolFiles = list()
-        for file in os.listdir("tools"):
-            if file[-3:] == '.py' and file != "__init__.py" and file != "ToolPane.py":
-                toolFiles.append(file[0:-3])
-        # load tool names, give them IDs
-        sys.path.append('tools')
-        for t in toolFiles:
-            module = __import__(t, globals(), locals(), ["NAME"])
-            name = getattr(module, "NAME")
+        for panel in panels:
+            name = panel.NAME
             id = wx.NewIdRef()
-            self.toolIndex[id] = (t, name)
+            self.panelIndex[id] = panel
             toolsmenu.Append(id, name)
-        toolsmenu.Append(self.ID_EXPORT, "export to AVR")  # save as dialog
+        toolsmenu.Append(self.ID_EXPORT, "Export to AVR")  # save as dialog
         menubar.Append(toolsmenu, "Tools")
 
         configmenu = wx.Menu()
         # dialog box: arbotix/thru, speed, port
-        configmenu.Append(self.ID_PORT, "port")
+        configmenu.Append(self.ID_PORT, "Port")
         columnmenu = wx.Menu()
         columnmenu.Append(self.ID_2COL, "2 columns")
         columnmenu.Append(self.ID_3COL, "3 columns")
         columnmenu.Append(self.ID_4COL, "4 columns")
-        configmenu.AppendSubMenu(columnmenu, "pose editor")
+        configmenu.AppendSubMenu(columnmenu, "Pose editor")
         # live update
         self.live = configmenu.Append(
-            self.ID_LIVE_UPDATE, "live pose update", kind=wx.ITEM_CHECK)
+            self.ID_LIVE_UPDATE, "Live pose update", kind=wx.ITEM_CHECK)
         # configmenu.Append(self.ID_TEST,"test") # for in-house testing of boards
         menubar.Append(configmenu, "Configuration")
 
@@ -133,7 +125,7 @@ class editor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.saveFileAs, self.ID_SAVE_AS)
         self.Bind(wx.EVT_MENU, sys.exit, self.ID_EXIT)
 
-        for t in self.toolIndex.keys():
+        for t in self.panelIndex.keys():
             self.Bind(wx.EVT_MENU, self.loadTool, t)
         self.Bind(wx.EVT_MENU, self.export, self.ID_EXPORT)
 
@@ -151,7 +143,7 @@ class editor(wx.Frame):
 
         # editor area
         self.sb = self.CreateStatusBar(2)
-        self.sb.SetStatusWidths([-1, 150])
+        self.sb.SetStatusWidths([-1, 250])
         self.sb.SetStatusText('not connected', 1)
 
         self.loadTool()
@@ -160,51 +152,42 @@ class editor(wx.Frame):
 
         self.Show(True)
 
-    ###########################################################################
-    # toolpane handling
     def loadTool(self, e=None):
-        if e is None:
-            t = "PoseEditor"
-        else:
-            t = self.toolIndex[e.GetId()][0]  # get name of file for this tool
-            if self.tool == t:
-                return
+        """Load toolpane."""
         if self.panel is not None:
             self.panel.save()
             # self.sizer.Remove(self.panel)
             self.panel.Destroy()
         self.ClearBackground()
         # instantiate
-        module = __import__(t, globals(), locals(), [t, "STATUS"])
-        panelClass = getattr(module, t)
-        self.panel = panelClass(self, self.port)
+        if e is None:
+            # PoseEditor
+            self.panel = panels[0](self, self.port)
+        else:
+            self.panel = self.panelIndex[e.GetId()](self, self.port)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.panel, 1, wx.EXPAND | wx.ALL, 10)
         self.SetSizer(self.sizer)
         self.SetAutoLayout(1)
         self.sizer.Fit(self)
-        self.sb.SetStatusText(getattr(module, "STATUS"), 0)
-        self.tool = t
+        self.sb.SetStatusText(self.panel.STATUS)
         self.panel.SetFocus()
 
-    ###########################################################################
-    # file handling
     def newFile(self, e):
-        """ Open a dialog that asks for robot name and servo count. """
+        """Open a dialog that asks for robot name and servo count."""
         dlg = NewProjectDialog(self, -1, "Create New Project")
         if dlg.ShowModal() == wx.ID_OK:
             self.project.new(dlg.name.GetValue(), dlg.count.GetValue(), int(
                 dlg.resolution.GetValue()))
             self.loadTool()
-            self.sb.SetStatusText(
-                'created new project ' + self.project.name + ', please create a pose...')
+            self.sb.SetStatusText('created new project ' + self.project.name + ', please create a pose...')
             self.SetTitle(VERSION + " - " + self.project.name)
             self.panel.saveReq = True
             self.filename = ""
         dlg.Destroy()
 
     def openFile(self, e):
-        """ Loads a robot file into the GUI. """
+        """Loads a robot file into the GUI."""
         dlg = wx.FileDialog(self, "Choose a file",
                             self.dirname, "", "*.ppr", wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
@@ -218,7 +201,7 @@ class editor(wx.Frame):
             self.sb.SetStatusText('opened ' + self.filename)
 
     def saveFile(self, e=None):
-        """ Save a robot file from the GUI. """
+        """Save a robot file from the GUI."""
         if self.filename == "":
             dlg = wx.FileDialog(self, "Choose a file", self.dirname, "", "*.ppr", wx.FD_SAVE)
             if dlg.ShowModal() == wx.ID_OK:
@@ -236,10 +219,8 @@ class editor(wx.Frame):
         self.filename = ""
         self.saveFile()
 
-    ###########################################################################
-    # Export functionality
     def export(self, e):
-        """ Export a pose file for use with Sanguino Library. """
+        """Export a pose file for use with Sanguino Library."""
         if self.project.name == "":
             self.sb.SetBackgroundColour('RED')
             self.sb.SetStatusText('please create a project')
@@ -252,10 +233,8 @@ class editor(wx.Frame):
             self.sb.SetStatusText("exported " + dlg.GetPath(), 0)
             dlg.Destroy()
 
-    ###########################################################################
-    # Port Manipulation
     def findPorts(self):
-        """ return a list of serial ports """
+        """Return a list of serial ports """
         self.ports = []
         for p in list_ports.comports():
             try:
@@ -279,14 +258,14 @@ class editor(wx.Frame):
             self.openPort(self.ports[dlg.GetSelection()])
             dlg.Destroy()
 
-    def openPort(self, port, baud=38400, interpolate=True):
+    def openPort(self, port, baud=1000000, interpolate=True):
         try:
             # TODO: add ability to select type of driver
             self.port = Driver(port, baud, interpolate)
             self.panel.port = self.port
             self.panel.portUpdated()
             self.sb.SetStatusText(port + '@' + str(baud), 1)
-        except:
+        except BaseException:
             self.port = None
             self.sb.SetBackgroundColour('RED')
             self.sb.SetStatusText('Could Not Open Port ' + port, 0)
@@ -310,29 +289,33 @@ class editor(wx.Frame):
             self.timer.Start(20)
 
     def doAbout(self, e=None):
-        license = """This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+        license = """
+        This program is free software; you can redistribute it and/or modify
+        it under the terms of the GNU General Public License as published by
+        the Free Software Foundation; either version 2 of the License, or
+        (at your option) any later version.
 
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
+        This library is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+        Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
-"""
-        info = wx.AboutDialogInfo()
+        You should have received a copy of the GNU Lesser General Public
+        License along with this library; if not, write to the Free Software
+        Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
+        """
+        info = wx.adv.AboutDialogInfo()
         info.SetName(VERSION)
         info.SetDescription(
             "A lightweight pose and capture software for the ArbotiX robocontroller")
         info.SetCopyright(
-            "Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.")
+            """
+            Copyright (c) 2020 Funtech-Makers.  All right reserved.
+            Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
+            """)
         info.SetLicense(license)
         info.SetWebSite("http://www.vanadiumlabs.com")
-        wx.AboutBox(info)
+        wx.adv.AboutBox(info)
 
     def doClose(self, e=None):
         # TODO: edit this to check if we NEED to save...
@@ -356,8 +339,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
             self.timeout = 0
             self.timer.Stop()
 
-    ###########################################################################
-    # Pose Editor settings
     def do2Col(self, e=None):
         self.columns = 2
         if self.tool == "PoseEditor":
@@ -377,11 +358,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
         if self.tool == "PoseEditor":
             self.panel.live = self.live.IsChecked()
 
-###############################################################################
-# New Project Dialog
-
 
 class NewProjectDialog(wx.Dialog):
+    """New Project Dialog."""
     def __init__(self, parent, id, title):
         wx.Dialog.__init__(self, parent, id, title, size=(310, 180))
 
@@ -409,8 +388,12 @@ class NewProjectDialog(wx.Dialog):
         self.SetSizer(vbox)
 
 
+def main():
+    app = wx.App()
+    Editor()
+    app.MainLoop()
+
+
 if __name__ == "__main__":
     print("PyPose starting... ")
-    app = wx.App()
-    frame = editor()
-    app.MainLoop()
+    main()

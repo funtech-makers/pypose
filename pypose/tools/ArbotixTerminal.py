@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
   PyPose: Bioloid pose system for arbotiX robocontroller
@@ -20,12 +20,11 @@
 """
 
 import wx
-import ax12
-from driver import Driver
-from ToolPane import ToolPane
+from pypose import ax12
+from .ToolPane import ToolPane
 
 # help phrases
-help = ["\rPyPose Terminal VA.1",
+help = ["\rPyPose Terminal V2",
         "\r",
         "\rvalid commands:",
         "\rls - list the servos found on the bus at current baud",
@@ -68,7 +67,7 @@ class shell(wx.TextCtrl):
         keycode = event.GetKeyCode()
         if keycode == wx.WXK_RETURN:
             # process the command!
-            line = self.PositionToXY(self.GetLastPosition())[1]
+            line = self.PositionToXY(self.GetLastPosition())[2]
             l = self.GetLineText(line)[3:].split(" ")
             try:
                 if l[0] == "help":   # display help data
@@ -114,31 +113,31 @@ class shell(wx.TextCtrl):
                             k = k + 1
                             wx.SafeYield()
                     self.parent.parent.port.ser.timeout = to
-                elif l[0] == u"mv":      # rename a servo
+                elif l[0] == "mv":      # rename a servo
                     if self.parent.parent.port.setReg(int(l[1]), ax12.P_ID, [int(l[2])]) == 0:
                         self.write("\rOK")
-                # elif l[0] == u"baud":    # set bus baud rate
-                #    if self.parent.parent.port.setReg(253,P_BAUD_RATE, [self.convertBaud(int(l[1]))] )
-                # elif l[0] == u"set":
-                    # if l[1] == u"baud":
-                    #    self.write("\r" + str(self.parent.parent.port.setReg(int(l[2]),P_BAUD_RATE, [self.convertBaud(int(l[3]))] ) )
-                    # elif l[1] == u"pos":
-                    #    pass
-                        # self.write("\r" + str(self.parent.parent.port.setReg(int(l[2]),P_BAUD_RATE, [self.convertBaud(int(l[3]))] ) )
-                        # self.write("\r" + str(self.parent.parent.port.setReg(int(l[2]),P_PRESENT_POSITION,2)))
-                elif l[0] == u"get":
-                    if l[1] == u"temp":
-                        self.write(
-                            "\r" + str(self.parent.parent.port.getReg(int(l[2]), ax12.P_PRESENT_TEMPERATURE, 2)))
-                    elif l[1] == u"pos":
-                        self.write(
-                            "\r" + str(self.parent.parent.port.getReg(int(l[2]), ax12.P_PRESENT_POSITION, 2)))
-            except:
-                self.write("\runrecognized command!")
+                elif l[0] == "baud":    # set bus baud rate
+                    if int(l[1]) in self.parent.parent.port.ser.BAUDRATES:
+                        self.parent.parent.port.ser.baudrate(int(l[2]))
+                    else:
+                        self.write("\rERROR : Invalid baudrate")
+                elif l[0] == "set":
+                    if l[1] == "baud":
+                        self.write("\r" + str(self.parent.parent.port.setReg(int(l[2]), ax12.P_BAUD_RATE, [self.convertBaud(int(l[3]))])))
+                    elif l[1] == "pos":
+                        self.write("\r" + str(self.parent.parent.port.setReg(int(l[2]), ax12.P_PRESENT_POSITION, 2)))
+                elif l[0] == "get":
+                    if l[1] == "temp":
+                        self.write("\r" + str(self.parent.parent.port.getReg(int(l[2]), ax12.P_PRESENT_TEMPERATURE, 2)))
+                    elif l[1] == "pos":
+                        self.write("\r" + str(self.parent.parent.port.getReg(int(l[2]), ax12.P_PRESENT_POSITION, 2)))
+            except BaseException:
+                self.write("\rERROR : Unrecognized command!")
             # new line!
             self.write("\r>> ")
         elif keycode == wx.WXK_BACK:
-            if(self.PositionToXY(self.GetLastPosition())[0] > 3):
+            print(self.PositionToXY(self.GetLastPosition())[1])
+            if(self.PositionToXY(self.GetLastPosition())[1] > 3):
                 self.Remove(self.GetLastPosition() - 1, self.GetLastPosition())
         else:
             self.write(chr(keycode))
@@ -167,6 +166,9 @@ class shell(wx.TextCtrl):
 class ArbotixTerminal(ToolPane):
     """ arbotix/bioloid terminal. """
 
+    NAME = "Terminal"
+    STATUS = "opened terminal..."
+
     def __init__(self, parent, port=None):
         ToolPane.__init__(self, parent, port)
         self.term = shell(self)
@@ -176,7 +178,3 @@ class ArbotixTerminal(ToolPane):
         self.Fit()
         sizer.SetSizeHints(self)
         self.Show(True)
-
-
-NAME = "terminal"
-STATUS = "opened terminal..."
