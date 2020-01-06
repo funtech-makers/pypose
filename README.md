@@ -4,17 +4,17 @@
 
 ##### Poses
 
-![Poses]('https://github.com/funtech-makers/pypose/blob/master/docs/imgs/poses.png?raw=true')
+![Poses](/docs/imgs/poses.png?raw=true)
 
 
 ##### Sequences
 
-![Sequences]('https://github.com/funtech-makers/pypose/blob/master/docs/imgs/sequences.png?raw=true')
+![Sequences](/docs/imgs/sequences.png?raw=true)
 
 
 ##### Terminal
 
-![Sequences]('https://github.com/funtech-makers/pypose/blob/master/docs/imgs/terminal.png?raw=true')
+![Sequences](/docs/imgs/terminal.png?raw=true)
 
 
 ### Features
