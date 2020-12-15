@@ -29,7 +29,7 @@
 You can install it with pip on any major platform
 
 ```
-git clone https://github.com/funtech-makers/pypose.git
+git clone https://github.com/robotique-ecam/pypose.git
 cd pypose
 pip install .
 ```
